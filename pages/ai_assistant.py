@@ -50,7 +50,7 @@ def _build_context(branch: str) -> str:
 def render(branch: str, kpi: dict):
     st.subheader("🤖 AI-Powered Hospital Operations Assistant")
     st.caption(
-        "Powered by **Google Gemini 2.5 Flash** · Ask anything about current resource status, "
+        "Powered by **Google Gemini 3.6 Flash** · Ask anything about current resource status, "
         "patient flow, contingency planning, or operational recommendations."
     )
 

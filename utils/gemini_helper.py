@@ -8,6 +8,14 @@ load_dotenv()
 
 _client = None
 
+# Try models in order until one works
+_MODELS_TO_TRY = [
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+]
+
 
 def _get_client():
     global _client
@@ -21,8 +29,8 @@ def _get_client():
 
 def ask_gemini(prompt: str, hospital_context: str = "") -> str:
     """
-    Send a prompt to Gemini 2.0 Flash with optional hospital data context.
-    Returns the text response or an error message string.
+    Send a prompt to Gemini with optional hospital data context.
+    Tries multiple model versions automatically if one is unavailable.
     """
     client = _get_client()
     if client is None:
@@ -47,14 +55,23 @@ def ask_gemini(prompt: str, hospital_context: str = "") -> str:
     else:
         full_prompt = f"{system_prompt}User Question: {prompt}"
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=full_prompt,
-        )
-        return response.text
-    except Exception as exc:
-        return f"❌ Gemini API error: {exc}"
+    last_error = None
+    for model_name in _MODELS_TO_TRY:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=full_prompt,
+            )
+            return response.text
+        except Exception as exc:
+            last_error = exc
+            # If model not found, try the next one
+            if "404" in str(exc) or "not found" in str(exc).lower() or "no longer available" in str(exc).lower():
+                continue
+            # Any other error — return immediately
+            return f"❌ Gemini API error: {exc}"
+
+    return f"❌ All Gemini models unavailable. Last error: {last_error}"
 
 
 def generate_alert_summary(kpi: dict) -> str:
