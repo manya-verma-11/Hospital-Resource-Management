@@ -105,7 +105,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.caption("Data simulated in real-time. Refresh cadence: 30 s.")
-    st.caption(f"© 2025 · IBM Bob · Gemini 2.0 Flash")
+    st.caption(f"© 2025 · IBM Bob · Gemini 2.5 Flash")
 
 # ── Auto-refresh logic ────────────────────────────────────────────────────────
 if refresh:
