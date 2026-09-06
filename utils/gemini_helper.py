@@ -1,32 +1,31 @@
-"""Gemini AI helper for the hospital dashboard."""
+"""Gemini AI helper — uses the new google-genai SDK."""
 
 import os
-import google.generativeai as genai
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
-_model = None
+_client = None
 
 
-def _get_model():
-    global _model
-    if _model is None:
+def _get_client():
+    global _client
+    if _client is None:
         api_key = os.getenv("GEMINI_API_KEY", "")
         if not api_key:
             return None
-        genai.configure(api_key=api_key)
-        _model = genai.GenerativeModel("gemini-2.0-flash")
-    return _model
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 
 def ask_gemini(prompt: str, hospital_context: str = "") -> str:
     """
-    Send a prompt to Gemini 1.5 Flash with optional hospital data context.
+    Send a prompt to Gemini 2.0 Flash with optional hospital data context.
     Returns the text response or an error message string.
     """
-    model = _get_model()
-    if model is None:
+    client = _get_client()
+    if client is None:
         return (
             "⚠️ Gemini API key not configured. "
             "Please set GEMINI_API_KEY in your .env file or sidebar input."
@@ -49,7 +48,10 @@ def ask_gemini(prompt: str, hospital_context: str = "") -> str:
         full_prompt = f"{system_prompt}User Question: {prompt}"
 
     try:
-        response = model.generate_content(full_prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=full_prompt,
+        )
         return response.text
     except Exception as exc:
         return f"❌ Gemini API error: {exc}"
@@ -65,11 +67,11 @@ def generate_alert_summary(kpi: dict) -> str:
         f"- Equipment: {kpi['total_equip']} units — "
         f"{kpi['op_equipment']} operational, {kpi['in_use_equip']} in use, "
         f"{kpi['maint_equip']} under maintenance, {kpi['offline_equip']} offline\n"
-        f"- Critical departments (≥90% occupancy): "
+        f"- Critical departments (>=90% occupancy): "
         f"{', '.join(kpi['critical_depts']) if kpi['critical_depts'] else 'None'}\n"
     )
     prompt = (
-        "Based on the snapshot above, write a concise (3–5 sentence) operational "
+        "Based on the snapshot above, write a concise (3-5 sentence) operational "
         "alert summary for the charge nurse or hospital administrator. "
         "Highlight the most urgent issues and suggest immediate actions."
     )
